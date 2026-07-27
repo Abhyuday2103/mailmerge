@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mail Merge List Builder</title>
+<style>
+  :root{
+    --ink:#1F2933; --brass:#A6803D; --brass-dk:#8A6A2F;
+    --paper:#F5F4F1; --card:#ffffff; --line:#E3E0D8; --line-soft:#F1EFE9;
+    --muted:#8A9099; --slate:#64748b;
+    --active-bg:#E7F3EE; --active-fg:#0F6B4F; --active-dot:#12885F;
+    --left-bg:#F1F0EC; --left-fg:#6B6455; --left-dot:#A39A83;
+    --bounced-bg:#FBEBEA; --bounced-fg:#A3352C; --bounced-dot:#C6473C;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px; line-height:1.4; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:24px 20px 60px;}
+  /* header */
+  header{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--line);}
+  .eyebrow{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--brass-dk);}
+  .eyebrow i{width:22px; height:2px; background:var(--brass); display:inline-block;}
+  h1{font-size:28px; margin:6px 0 4px; letter-spacing:-0.02em;}
+  .sub{color:var(--slate); max-width:34rem; font-size:13px;}
+  .stats{display:flex; gap:8px;}
+  .stat{padding:8px 14px; border:1px solid var(--line); border-radius:10px; text-align:center; min-width:76px; background:var(--card);}
+  .stat.active{background:var(--active-bg); border-color:#12885F33;}
+  .stat .lab{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+  .stat.active .lab{color:var(--active-fg);}
+  .stat .num{font-size:22px; font-weight:800; line-height:1.1;}
+  .stat.active .num{color:var(--active-fg);}
+  /* toolbar */
+  .toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; align-items:center;}
+  .search{position:relative; flex:1; min-width:180px;}
+  .search svg{position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#9aa1a9;}
+  input,select{font:inherit; color:var(--ink); background:var(--card); border:1px solid #cfd4da; border-radius:8px; padding:8px 10px;}
+  input:focus,select:focus{outline:none; border-color:var(--brass); box-shadow:0 0 0 3px #A6803D22;}
+  .search input{width:100%; padding-left:30px;}
+  button{font:inherit; cursor:pointer; border:none; border-radius:8px;}
+  .btn{display:inline-flex; align-items:center; gap:6px; padding:8px 13px; font-size:13px; font-weight:600;}
+  .btn-ghost{background:var(--card); border:1px solid #cfd4da;}
+  .btn-ghost:hover{background:#fafafa;}
+  .btn-dark{background:var(--ink); color:#fff;}
+  .btn-dark:hover{background:#2b3742;}
+  .btn-brass{background:var(--brass); color:#fff;}
+  .btn-brass:hover{background:var(--brass-dk);}
+  .btn-brass-o{background:#fff; border:1px solid var(--brass); color:var(--brass-dk);}
+  .btn-green{background:#12885F; color:#fff;}
+  /* form panel */
+  #panel{display:none; margin-top:16px; padding:16px; border:1px solid var(--line); border-radius:12px; background:#FCFBF8;}
+  #panel.open{display:block;}
+  .panel-title{font-weight:700; font-size:13px; margin-bottom:10px;}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .grid input,.grid select{width:100%;}
+  .panel-actions{display:flex; gap:8px; margin-top:12px;}
+  /* table */
+  .table{margin-top:16px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card);}
+  .thead,.trow{display:grid; grid-template-columns:2.6fr 2.6fr 2.2fr 1.4fr .8fr; gap:8px; align-items:center; padding:11px 16px;}
+  .thead{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line-soft);}
+  .thead .r,.trow .r{text-align:right;}
+  .trow{border-bottom:1px solid var(--line-soft);}
+  .trow:last-child{border-bottom:none;}
+  .trow:hover{background:#faf9f6;}
+  .nm{font-weight:600;}
+  .tt{font-size:12px; color:var(--muted);}
+  .cell-muted{color:var(--slate);}
+  .truncate{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:99px; font-size:12px; font-weight:600; border:none; cursor:pointer;}
+  .dot{width:6px; height:6px; border-radius:99px;}
+  .pill.Active{background:var(--active-bg); color:var(--active-fg);} .pill.Active .dot{background:var(--active-dot);}
+  .pill.Left{background:var(--left-bg); color:var(--left-fg);} .pill.Left .dot{background:var(--left-dot);}
+  .pill.Bounced{background:var(--bounced-bg); color:var(--bounced-fg);} .pill.Bounced .dot{background:var(--bounced-dot);}
+  .row-actions{display:flex; justify-content:flex-end; gap:2px;}
+  .icon-btn{background:none; padding:6px; border-radius:7px; color:#9aa1a9; display:inline-flex;}
+  .icon-btn:hover{background:#eef0f2; color:var(--ink);}
+  .icon-btn.del:hover{background:var(--bounced-bg); color:var(--bounced-fg);}
+  .empty{padding:48px 16px; text-align:center; color:var(--slate);}
+  .empty .row{display:flex; gap:8px; justify-content:center; margin-top:16px;}
+  /* export bar */
+  .export{margin-top:20px; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--card);}
+  .export-top{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;}
+  .export h3{margin:0; font-size:14px;}
+  .export .meta{font-size:12px; color:var(--slate); margin-top:2px;}
+  .export-actions{display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
+  .seg{display:flex; border:1px solid #DAD6CC; border-radius:8px; overflow:hidden; font-size:12px;}
+  .seg button{padding:7px 11px; font-weight:600; background:#fff; color:var(--slate); border-left:1px solid #DAD6CC;}
+  .seg button:first-child{border-left:none;}
+  .seg button.on{background:var(--ink); color:#fff;}
+  .backup{display:flex; align-items:center; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line-soft); font-size:12px; color:var(--muted);}
+  .backup a{color:var(--slate); cursor:pointer; text-decoration:underline;}
+  .backup a:hover{color:var(--ink);}
+  .note{display:flex; gap:6px; align-items:flex-start; font-size:12px; color:var(--slate); margin-top:14px;}
+  /* toast */
+  #toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:all .25s; box-shadow:0 8px 24px #0003;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .hide-sm{}
+  @media(max-width:640px){
+    .thead,.trow{grid-template-columns:2fr 1.6fr 1.2fr; }
+    .col-email,.hide-sm{display:none;}
+    .grid{grid-template-columns:1fr 1fr;}
+    h1{font-size:24px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow"><i></i>Master contact list</div>
+      <h1>Mail merge list builder</h1>
+      <div class="sub">Keep one list. Flip people to <b>Left</b> when they move on, add their replacement, then export a clean file for Word or any mail-merge site.</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="lab">Total</div><div class="num" id="statTotal">0</div></div>
+      <div class="stat active"><div class="lab">Active</div><div class="num" id="statActive">0</div></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" placeholder="Search name, email, company…" />
+    </div>
+    <select id="statusFilter"><option value="All">All statuses</option><option>Active</option><option>Left</option><option>Bounced</option></select>
+    <select id="companyFilter"><option value="All">All companies</option></select>
+    <button class="btn btn-ghost" id="importBtn">Import CSV</button>
+    <input type="file" id="importFile" accept=".csv,.txt" hidden />
+    <button class="btn btn-dark" id="addBtn">+ Add contact</button>
+  </div>
+
+  <div id="panel">
+    <div class="panel-title" id="panelTitle">Add contact</div>
+    <div class="grid">
+      <input id="f_firstName" placeholder="First name" />
+      <input id="f_lastName" placeholder="Last name" />
+      <input id="f_email" placeholder="Email" />
+      <input id="f_company" placeholder="Company" />
+      <input id="f_title" placeholder="Job title" />
+      <select id="f_status"><option>Active</option><option>Left</option><option>Bounced</option></select>
+    </div>
+    <div class="panel-actions">
+      <button class="btn btn-green" id="saveBtn">Save</button>
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+    </div>
+  </div>
+
+  <div class="table">
+    <div class="thead">
+      <div>Name</div>
+      <div class="col-email">Email</div>
+      <div>Company</div>
+      <div>Status</div>
+      <div class="r">·</div>
+    </div>
+    <div id="rows"></div>
+  </div>
+
+  <div class="export">
+    <div class="export-top">
+      <div>
+        <h3>Export for mail merge</h3>
+        <div class="meta" id="exportMeta">0 contacts selected · columns: First Name, Last Name, Email, Company, Job Title</div>
+      </div>
+      <div class="export-actions">
+        <div class="seg" id="scopeSeg">
+          <button data-scope="active" class="on">Active only</button>
+          <button data-scope="filtered">Current view</button>
+          <button data-scope="all">Everyone</button>
+        </div>
+        <button class="btn btn-brass-o" id="csvBtn">CSV</button>
+        <button class="btn btn-brass" id="xlsxBtn">Excel (.xlsx)</button>
+      </div>
+    </div>
+    <div class="backup">
+      <span>Your list saves automatically on this device.</span>
+      <a id="backupBtn">Save a backup</a><span>·</span>
+      <a id="restoreBtn">Restore backup</a>
+      <input type="file" id="restoreFile" accept=".json" hidden />
+    </div>
+  </div>
+
+  <div class="note">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top:2px;flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <span>In Word: use the .xlsx as your data source (Mailings → Select Recipients → Use an Existing List). For mail-merge websites: upload the CSV. To import an existing Excel list, save it as CSV first (File → Save As → CSV), then use Import CSV.</span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+const KEY="mailmerge_contacts_v1";
+const STATUSES=["Active","Left","Bounced"];
+const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"]];
+const $=(id)=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+let contacts=[];
+let editingId=null;
+let scope="active";
+let query="", statusFilter="All", companyFilter="All";
+
+// ---------- persistence ----------
+function load(){ try{ const r=localStorage.getItem(KEY); contacts=r?JSON.parse(r):[]; }catch(e){ contacts=[]; } }
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(contacts)); }catch(e){} }
+
+// ---------- helpers ----------
+function emailOk(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e||"").trim()); }
+function norm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+function mapHeader(h){
+  const n=norm(h);
+  if(["firstname","first","fname","givenname"].includes(n)) return "firstName";
+  if(["lastname","last","lname","surname","familyname"].includes(n)) return "lastName";
+  if(["email","emailaddress","mail","e"].includes(n)) return "email";
+  if(["company","account","organization","organisation","client","firm"].includes(n)) return "company";
+  if(["title","jobtitle","position","role"].includes(n)) return "title";
+  if(["status"].includes(n)) return "status";
+  if(["notes","note","comment","comments"].includes(n)) return "notes";
+  if(["name","fullname","contact"].includes(n)) return "fullName";
+  return null;
+}
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2600); }
+
+// ---------- CSV ----------
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  const rows=[]; let row=[], field="", i=0, q=false;
+  while(i<text.length){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){ field+='"'; i+=2; continue;} q=false; i++; continue; }
+      field+=ch; i++; continue;
+    } else {
+      if(ch==='"'){ q=true; i++; continue; }
+      if(ch===','){ row.push(field); field=""; i++; continue; }
+      if(ch==='\r'){ i++; continue; }
+      if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=""; i++; continue; }
+      field+=ch; i++; continue;
+    }
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.some(c=>String(c).trim()!==""));
+}
+function csvCell(v){ const s=String(v==null?"":v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function buildCSV(list){
+  const head=EXPORT_COLS.map(c=>c[1]).join(",");
+  const body=list.map(r=>EXPORT_COLS.map(c=>csvCell(r[c[0]])).join(",")).join("\n");
+  return "\uFEFF"+head+"\n"+body;
+}
+
+// ---------- XLSX (pure JS, no libraries) ----------
+const crcTable=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(bytes){let c=0xFFFFFFFF;for(let i=0;i<bytes.length;i++)c=crcTable[(c^bytes[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function u16(a,v){a.push(v&0xFF,(v>>>8)&0xFF);}
+function u32(a,v){a.push(v&0xFF,(v>>>8)&0xFF,(v>>>16)&0xFF,(v>>>24)&0xFF);}
+function xmlEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function colLetter(n){let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+function sheetXml(grid){
+  let rows="";
+  grid.forEach((r,ri)=>{
+    let cells="";
+    r.forEach((val,ci)=>{ cells+='<c r="'+colLetter(ci)+(ri+1)+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(val)+'</t></is></c>'; });
+    rows+='<row r="'+(ri+1)+'">'+cells+'</row>';
+  });
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+rows+'</sheetData></worksheet>';
+}
+function makeZip(files){
+  const enc=new TextEncoder();
+  const chunks=[], central=[]; let offset=0;
+  for(const f of files){
+    const nameB=enc.encode(f.name);
+    const data=f.data;
+    const crc=crc32(data), size=data.length;
+    const lh=[]; u32(lh,0x04034b50); u16(lh,20); u16(lh,0); u16(lh,0); u16(lh,0); u16(lh,0);
+    u32(lh,crc); u32(lh,size); u32(lh,size); u16(lh,nameB.length); u16(lh,0);
+    const lhB=new Uint8Array(lh);
+    chunks.push(lhB,nameB,data);
+    const cd=[]; u32(cd,0x02014b50); u16(cd,20); u16(cd,20); u16(cd,0); u16(cd,0); u16(cd,0); u16(cd,0);
+    u32(cd,crc); u32(cd,size); u32(cd,size); u16(cd,nameB.length); u16(cd,0); u16(cd,0); u16(cd,0); u16(cd,0);
+    u32(cd,0); u32(cd,offset);
+    central.push({b:new Uint8Array(cd),n:nameB});
+    offset+=lhB.length+nameB.length+data.length;
+  }
+  const cdStart=offset; let cdSize=0; const cdChunks=[];
+  for(const c of central){ cdChunks.push(c.b,c.n); cdSize+=c.b.length+c.n.length; }
+  const eo=[]; u32(eo,0x06054b50); u16(eo,0); u16(eo,0); u16(eo,files.length); u16(eo,files.length);
+  u32(eo,cdSize); u32(eo,cdStart); u16(eo,0);
+  return new Blob([...chunks,...cdChunks,new Uint8Array(eo)],{type:"application/octet-stream"});
+}
+function buildXLSX(list){
+  const enc=new TextEncoder();
+  const grid=[EXPORT_COLS.map(c=>c[1])].concat(list.map(r=>EXPORT_COLS.map(c=>r[c[0]]||"")));
+  const F=(name,str)=>({name,data:enc.encode(str)});
+  const files=[
+    F("[Content_Types].xml",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'),
+    F("_rels/.rels",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'),
+    F("xl/workbook.xml",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Contacts" sheetId="1" r:id="rId1"/></sheets></workbook>'),
+    F("xl/_rels/workbook.xml.rels",'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'),
+    F("xl/worksheets/sheet1.xml",sheetXml(grid)),
+  ];
+  return makeZip(files);
+}
+
+// ---------- download ----------
+function download(name,blob){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+// ---------- filtering ----------
+function getFiltered(){
+  const q=query.trim().toLowerCase();
+  return contacts.filter(c=>{
+    if(statusFilter!=="All" && c.status!==statusFilter) return false;
+    if(companyFilter!=="All" && c.company!==companyFilter) return false;
+    if(!q) return true;
+    return [c.firstName,c.lastName,c.email,c.company,c.title].some(f=>String(f||"").toLowerCase().includes(q));
+  });
+}
+function getScopeRows(){
+  if(scope==="active") return contacts.filter(c=>c.status==="Active");
+  if(scope==="filtered") return getFiltered();
+  return contacts.slice();
+}
+
+// ---------- render ----------
+function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+function render(){
+  $("statTotal").textContent=contacts.length;
+  $("statActive").textContent=contacts.filter(c=>c.status==="Active").length;
+
+  // company filter options
+  const cf=$("companyFilter"); const prev=companyFilter;
+  const companies=[...new Set(contacts.map(c=>c.company).filter(Boolean))].sort();
+  cf.innerHTML='<option value="All">All companies</option>'+companies.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
+  cf.value=companies.includes(prev)||prev==="All"?prev:"All"; companyFilter=cf.value;
+
+  const rows=$("rows"); rows.innerHTML="";
+  const list=getFiltered();
+  if(list.length===0){
+    const e=el("div","empty");
+    e.appendChild(el("div",null,contacts.length?"No contacts match your search or filters.":"Your list is empty."));
+    if(!contacts.length){
+      const r=el("div","row");
+      const b1=el("button","btn btn-ghost","Import your current list"); b1.onclick=()=>$("importFile").click();
+      const b2=el("button","btn btn-dark","+ Add one by hand"); b2.onclick=openAdd;
+      r.appendChild(b1); r.appendChild(b2); e.appendChild(r);
+    }
+    rows.appendChild(e);
+  } else {
+    for(const c of list){
+      const row=el("div","trow");
+      // name
+      const nameWrap=el("div");
+      nameWrap.appendChild(el("div","nm truncate",(c.firstName+" "+c.lastName).trim()));
+      if(c.title) nameWrap.appendChild(el("div","tt truncate",c.title));
+      const emailSm=el("div","tt truncate hide-sm-inv"); // small-screen email under name
+      row.appendChild(nameWrap);
+      // email
+      const em=el("div","cell-muted truncate col-email",c.email); row.appendChild(em);
+      // company
+      row.appendChild(el("div","cell-muted truncate",c.company));
+      // status
+      const stWrap=el("div");
+      const pill=el("button","pill "+c.status);
+      pill.title="Click to change status";
+      pill.appendChild(el("span","dot"));
+      pill.appendChild(document.createTextNode(c.status));
+      pill.onclick=()=>cycleStatus(c.id);
+      stWrap.appendChild(pill); row.appendChild(stWrap);
+      // actions
+      const act=el("div","row-actions");
+      const edit=el("button","icon-btn"); edit.title="Edit";
+      edit.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+      edit.onclick=()=>openEdit(c.id);
+      const del=el("button","icon-btn del"); del.title="Delete";
+      del.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
+      del.onclick=()=>{ contacts=contacts.filter(x=>x.id!==c.id); persist(); render(); };
+      act.appendChild(edit); act.appendChild(del);
+      row.appendChild(act);
+      rows.appendChild(row);
+    }
+  }
+  const n=getScopeRows().length;
+  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title";
+}
+
+// ---------- CRUD form ----------
+function openAdd(){ editingId=null; $("panelTitle").textContent="Add contact"; ["firstName","lastName","email","company","title"].forEach(k=>$("f_"+k).value=""); $("f_status").value="Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
+function openEdit(id){ const c=contacts.find(x=>x.id===id); if(!c)return; editingId=id; $("panelTitle").textContent="Edit contact"; ["firstName","lastName","email","company","title","status"].forEach(k=>$("f_"+k).value=c[k]||""); $("f_status").value=c.status||"Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
+function closePanel(){ $("panel").classList.remove("open"); editingId=null; }
+function saveForm(){
+  const d={
+    firstName:$("f_firstName").value.trim(), lastName:$("f_lastName").value.trim(),
+    email:$("f_email").value.trim(), company:$("f_company").value.trim(),
+    title:$("f_title").value.trim(), status:$("f_status").value,
+  };
+  if(!d.firstName && !d.lastName && !d.email){ toast("Add at least a name or an email."); return; }
+  if(d.email && !emailOk(d.email)){ toast("That email address looks off — check it."); return; }
+  if(editingId){ contacts=contacts.map(c=>c.id===editingId?Object.assign({},c,d):c); }
+  else { contacts.unshift(Object.assign({id:uid(),notes:""},d)); }
+  persist(); closePanel(); render();
+}
+function cycleStatus(id){
+  contacts=contacts.map(c=>{ if(c.id!==id)return c; const i=(STATUSES.indexOf(c.status)+1)%STATUSES.length; return Object.assign({},c,{status:STATUSES[i]}); });
+  persist(); render();
+}
+
+// ---------- import ----------
+function importCSV(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const rows=parseCSV(e.target.result);
+      if(rows.length<2){ toast("That file needs a header row plus at least one contact."); return; }
+      const headers=rows[0].map(mapHeader);
+      const imported=[];
+      for(let i=1;i<rows.length;i++){
+        const r=rows[i]; const c={id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",status:"Active",notes:""};
+        headers.forEach((h,ci)=>{
+          const v=(r[ci]||"").trim();
+          if(h==="fullName"){ const p=v.split(/\s+/); c.firstName=p.shift()||""; c.lastName=p.join(" "); }
+          else if(h && h!=="fullName"){ c[h]=v; }
+        });
+        if(!STATUSES.includes(c.status)) c.status="Active";
+        if(c.firstName||c.lastName||c.email) imported.push(c);
+      }
+      const seen=new Set(contacts.map(c=>c.email.toLowerCase()).filter(Boolean));
+      const fresh=imported.filter(c=>!c.email||!seen.has(c.email.toLowerCase()));
+      contacts=fresh.concat(contacts); persist(); render();
+      const dup=imported.length-fresh.length;
+      toast("Imported "+fresh.length+" contact"+(fresh.length===1?"":"s")+(dup?" · skipped "+dup+" duplicate"+(dup===1?"":"s"):""));
+    }catch(err){ toast("Couldn't read that file. Use a .csv with a header row."); }
+  };
+  reader.readAsText(file);
+}
+
+// ---------- export ----------
+function doExport(kind){
+  const rows=getScopeRows();
+  if(!rows.length){ toast("No contacts in that selection to export."); return; }
+  if(kind==="csv") download("mail-merge-list.csv",new Blob([buildCSV(rows)],{type:"text/csv;charset=utf-8;"}));
+  else download("mail-merge-list.xlsx",buildXLSX(rows));
+  toast("Exported "+rows.length+" contact"+(rows.length===1?"":"s")+" as "+kind.toUpperCase()+".");
+}
+
+// ---------- backup ----------
+function backup(){ download("contacts-backup.json",new Blob([JSON.stringify(contacts,null,2)],{type:"application/json"})); toast("Backup saved."); }
+function restore(file){
+  const reader=new FileReader();
+  reader.onload=e=>{ try{ const arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ contacts=arr.map(c=>Object.assign({id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",status:"Active",notes:""},c)); persist(); render(); toast("Restored "+arr.length+" contacts."); } else toast("That backup file didn't look right."); }catch(err){ toast("That backup file couldn't be read."); } };
+  reader.readAsText(file);
+}
+
+// ---------- wire up ----------
+$("search").oninput=e=>{ query=e.target.value; render(); };
+$("statusFilter").onchange=e=>{ statusFilter=e.target.value; render(); };
+$("companyFilter").onchange=e=>{ companyFilter=e.target.value; render(); };
+$("addBtn").onclick=openAdd;
+$("cancelBtn").onclick=closePanel;
+$("saveBtn").onclick=saveForm;
+$("panel").addEventListener("keydown",e=>{ if(e.key==="Enter")saveForm(); if(e.key==="Escape")closePanel(); });
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=e=>{ if(e.target.files[0]) importCSV(e.target.files[0]); e.target.value=""; };
+$("csvBtn").onclick=()=>doExport("csv");
+$("xlsxBtn").onclick=()=>doExport("xlsx");
+$("scopeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b)return; scope=b.dataset.scope; [...$("scopeSeg").children].forEach(x=>x.classList.toggle("on",x===b)); render(); });
+$("backupBtn").onclick=backup;
+$("restoreBtn").onclick=()=>$("restoreFile").click();
+$("restoreFile").onchange=e=>{ if(e.target.files[0]) restore(e.target.files[0]); e.target.value=""; };
+
+load(); render();
+</script>
+</body>
+</html>
