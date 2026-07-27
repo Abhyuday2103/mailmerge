@@ -127,6 +127,8 @@
     </div>
     <select id="statusFilter"><option value="All">All statuses</option><option>Active</option><option>Left</option><option>Bounced</option></select>
     <select id="companyFilter"><option value="All">All companies</option></select>
+    <select id="regionFilter"><option value="All">All regions</option></select>
+    <input id="importRegion" placeholder="Tag region on import (optional)" style="max-width:220px" />
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <input type="file" id="importFile" accept=".csv,.txt" hidden />
     <button class="btn btn-dark" id="addBtn">+ Add contact</button>
@@ -140,6 +142,8 @@
       <input id="f_email" placeholder="Email" />
       <input id="f_company" placeholder="Company" />
       <input id="f_title" placeholder="Job title" />
+      <input id="f_city" placeholder="City" />
+      <input id="f_region" placeholder="Region / territory" />
       <select id="f_status"><option>Active</option><option>Left</option><option>Bounced</option></select>
     </div>
     <div class="panel-actions">
@@ -163,7 +167,7 @@
     <div class="export-top">
       <div>
         <h3>Export for mail merge</h3>
-        <div class="meta" id="exportMeta">0 contacts selected · columns: First Name, Last Name, Email, Company, Job Title</div>
+        <div class="meta" id="exportMeta">0 contacts selected · columns: First Name, Last Name, Email, Company, Job Title, City, Region</div>
       </div>
       <div class="export-actions">
         <div class="seg" id="scopeSeg">
@@ -185,7 +189,7 @@
 
   <div class="note">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-top:2px;flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-    <span>In Word: use the .xlsx as your data source (Mailings → Select Recipients → Use an Existing List). For mail-merge websites: upload the CSV. To import an existing Excel list, save it as CSV first (File → Save As → CSV), then use Import CSV.</span>
+    <span>In Word: use the .xlsx as your data source (Mailings → Select Recipients → Use an Existing List). For mail-merge websites: upload the CSV. To import an existing Excel list, save it as CSV first (File → Save As → CSV), then use Import CSV. Uploading one region at a time? Skip the region column and type the region in the “Tag region on import” box before importing — every row in that file gets tagged automatically.</span>
   </div>
 </div>
 
@@ -195,14 +199,14 @@
 "use strict";
 const KEY="mailmerge_contacts_v1";
 const STATUSES=["Active","Left","Bounced"];
-const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"]];
+const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"],["city","City"],["region","Region"]];
 const $=(id)=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 let contacts=[];
 let editingId=null;
 let scope="active";
-let query="", statusFilter="All", companyFilter="All";
+let query="", statusFilter="All", companyFilter="All", regionFilter="All";
 
 // ---------- persistence ----------
 function load(){ try{ const r=localStorage.getItem(KEY); contacts=r?JSON.parse(r):[]; }catch(e){ contacts=[]; } }
@@ -218,6 +222,8 @@ function mapHeader(h){
   if(["email","emailaddress","mail","e"].includes(n)) return "email";
   if(["company","account","organization","organisation","client","firm"].includes(n)) return "company";
   if(["title","jobtitle","position","role"].includes(n)) return "title";
+  if(["city","town"].includes(n)) return "city";
+  if(["region","territory","area","zone","market","state"].includes(n)) return "region";
   if(["status"].includes(n)) return "status";
   if(["notes","note","comment","comments"].includes(n)) return "notes";
   if(["name","fullname","contact"].includes(n)) return "fullName";
@@ -320,6 +326,7 @@ function getFiltered(){
   return contacts.filter(c=>{
     if(statusFilter!=="All" && c.status!==statusFilter) return false;
     if(companyFilter!=="All" && c.company!==companyFilter) return false;
+    if(regionFilter!=="All" && c.region!==regionFilter) return false;
     if(!q) return true;
     return [c.firstName,c.lastName,c.email,c.company,c.title].some(f=>String(f||"").toLowerCase().includes(q));
   });
@@ -341,6 +348,11 @@ function render(){
   const companies=[...new Set(contacts.map(c=>c.company).filter(Boolean))].sort();
   cf.innerHTML='<option value="All">All companies</option>'+companies.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
   cf.value=companies.includes(prev)||prev==="All"?prev:"All"; companyFilter=cf.value;
+
+  const rf=$("regionFilter"); const rprev=regionFilter;
+  const regions=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort();
+  rf.innerHTML='<option value="All">All regions</option>'+regions.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
+  rf.value=regions.includes(rprev)||rprev==="All"?rprev:"All"; regionFilter=rf.value;
 
   const rows=$("rows"); rows.innerHTML="";
   const list=getFiltered();
@@ -365,8 +377,12 @@ function render(){
       row.appendChild(nameWrap);
       // email
       const em=el("div","cell-muted truncate col-email",c.email); row.appendChild(em);
-      // company
-      row.appendChild(el("div","cell-muted truncate",c.company));
+      // company + location
+      const compWrap=el("div");
+      compWrap.appendChild(el("div","cell-muted truncate",c.company));
+      const loc=[c.city,c.region].filter(Boolean).join(" · ");
+      if(loc) compWrap.appendChild(el("div","tt truncate",loc));
+      row.appendChild(compWrap);
       // status
       const stWrap=el("div");
       const pill=el("button","pill "+c.status);
@@ -389,18 +405,19 @@ function render(){
     }
   }
   const n=getScopeRows().length;
-  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title";
+  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title, City, Region";
 }
 
 // ---------- CRUD form ----------
-function openAdd(){ editingId=null; $("panelTitle").textContent="Add contact"; ["firstName","lastName","email","company","title"].forEach(k=>$("f_"+k).value=""); $("f_status").value="Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
-function openEdit(id){ const c=contacts.find(x=>x.id===id); if(!c)return; editingId=id; $("panelTitle").textContent="Edit contact"; ["firstName","lastName","email","company","title","status"].forEach(k=>$("f_"+k).value=c[k]||""); $("f_status").value=c.status||"Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
+function openAdd(){ editingId=null; $("panelTitle").textContent="Add contact"; ["firstName","lastName","email","company","title","city","region"].forEach(k=>$("f_"+k).value=""); $("f_status").value="Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
+function openEdit(id){ const c=contacts.find(x=>x.id===id); if(!c)return; editingId=id; $("panelTitle").textContent="Edit contact"; ["firstName","lastName","email","company","title","city","region","status"].forEach(k=>$("f_"+k).value=c[k]||""); $("f_status").value=c.status||"Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
 function closePanel(){ $("panel").classList.remove("open"); editingId=null; }
 function saveForm(){
   const d={
     firstName:$("f_firstName").value.trim(), lastName:$("f_lastName").value.trim(),
     email:$("f_email").value.trim(), company:$("f_company").value.trim(),
-    title:$("f_title").value.trim(), status:$("f_status").value,
+    title:$("f_title").value.trim(), city:$("f_city").value.trim(),
+    region:$("f_region").value.trim(), status:$("f_status").value,
   };
   if(!d.firstName && !d.lastName && !d.email){ toast("Add at least a name or an email."); return; }
   if(d.email && !emailOk(d.email)){ toast("That email address looks off — check it."); return; }
@@ -421,15 +438,17 @@ function importCSV(file){
       const rows=parseCSV(e.target.result);
       if(rows.length<2){ toast("That file needs a header row plus at least one contact."); return; }
       const headers=rows[0].map(mapHeader);
+      const batchRegion=$("importRegion").value.trim();
       const imported=[];
       for(let i=1;i<rows.length;i++){
-        const r=rows[i]; const c={id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",status:"Active",notes:""};
+        const r=rows[i]; const c={id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",status:"Active",notes:""};
         headers.forEach((h,ci)=>{
           const v=(r[ci]||"").trim();
           if(h==="fullName"){ const p=v.split(/\s+/); c.firstName=p.shift()||""; c.lastName=p.join(" "); }
           else if(h && h!=="fullName"){ c[h]=v; }
         });
         if(!STATUSES.includes(c.status)) c.status="Active";
+        if(!c.region && batchRegion) c.region=batchRegion;
         if(c.firstName||c.lastName||c.email) imported.push(c);
       }
       const seen=new Set(contacts.map(c=>c.email.toLowerCase()).filter(Boolean));
@@ -455,7 +474,7 @@ function doExport(kind){
 function backup(){ download("contacts-backup.json",new Blob([JSON.stringify(contacts,null,2)],{type:"application/json"})); toast("Backup saved."); }
 function restore(file){
   const reader=new FileReader();
-  reader.onload=e=>{ try{ const arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ contacts=arr.map(c=>Object.assign({id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",status:"Active",notes:""},c)); persist(); render(); toast("Restored "+arr.length+" contacts."); } else toast("That backup file didn't look right."); }catch(err){ toast("That backup file couldn't be read."); } };
+  reader.onload=e=>{ try{ const arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ contacts=arr.map(c=>Object.assign({id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",status:"Active",notes:""},c)); persist(); render(); toast("Restored "+arr.length+" contacts."); } else toast("That backup file didn't look right."); }catch(err){ toast("That backup file couldn't be read."); } };
   reader.readAsText(file);
 }
 
@@ -463,6 +482,7 @@ function restore(file){
 $("search").oninput=e=>{ query=e.target.value; render(); };
 $("statusFilter").onchange=e=>{ statusFilter=e.target.value; render(); };
 $("companyFilter").onchange=e=>{ companyFilter=e.target.value; render(); };
+$("regionFilter").onchange=e=>{ regionFilter=e.target.value; render(); };
 $("addBtn").onclick=openAdd;
 $("cancelBtn").onclick=closePanel;
 $("saveBtn").onclick=saveForm;
