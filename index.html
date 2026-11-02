@@ -501,8 +501,12 @@ function render(){
     meta.appendChild(tier);
 
     const regs=[...new Set(members.map(m=>m.region).filter(Boolean))];
-    if(regs.length===1) meta.appendChild(el("span","gregion",regs[0]));
-    else if(regs.length>1) meta.appendChild(el("span","gregion","multiple regions"));
+    if(regs.length===1){ meta.appendChild(el("span","gregion",regs[0])); }
+    else if(regs.length>1){
+      const mets=[...new Set(regs.map(metroOf).filter(Boolean))];
+      if(mets.length===1) meta.appendChild(el("span","gregion",mets[0]));        // same metro, different directions
+      else meta.appendChild(el("span","gregion","multiple metros"));             // genuinely split across cities
+    }
 
     const activeN=members.filter(m=>m.status==="Active").length;
     meta.appendChild(el("span","gcount",members.length+(members.length===1?" contact":" contacts")+" · "+activeN+" active"));
