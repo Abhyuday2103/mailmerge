@@ -175,6 +175,7 @@
     <select id="statusFilter"><option value="All">All statuses</option><option>Active</option><option>Left</option><option>Bounced</option></select>
     <select id="tierFilter"><option value="All">All tiers</option><option>Gold</option><option>Silver</option><option>Bronze</option></select>
     <select id="companyFilter"><option value="All">All companies</option></select>
+    <select id="metroFilter"><option value="All">All metros</option></select>
     <select id="regionFilter"><option value="All">All regions</option></select>
     <input id="importRegion" placeholder="Tag region on import (optional)" style="max-width:220px" />
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
@@ -208,7 +209,7 @@
     <div class="export-top">
       <div>
         <h3>Export for mail merge</h3>
-        <div class="meta" id="exportMeta">0 contacts selected · columns: First Name, Last Name, Email, Company, Job Title, City, Region</div>
+        <div class="meta" id="exportMeta">0 contacts selected · columns: First Name, Last Name, Email, Company, Job Title, City, Metro, Region, Tier</div>
       </div>
       <div class="export-actions">
         <div class="seg" id="scopeSeg">
@@ -264,14 +265,33 @@ const SUPABASE_ANON_KEY = "";
 /* ========================================== */
 const KEY="mailmerge_contacts_v1";
 const STATUSES=["Active","Left","Bounced"];
-const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"],["city","City"],["region","Region"],["tier","Tier"]];
+const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"],["city","City"],["metro","Metro"],["region","Region"],["tier","Tier"]];
 const $=(id)=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 let contacts=[];
 let editingId=null;
 let scope="active";
-let query="", statusFilter="All", companyFilter="All", regionFilter="All", tierFilter="All";
+let query="", statusFilter="All", companyFilter="All", regionFilter="All", tierFilter="All", metroFilter="All";
+// Derive the major-city / metro level from a region string, with no reassignment.
+// "Central Milwaukee - WI" -> "Milwaukee";  "southern IL" -> "IL";  "West Bay Area - WI" -> "Bay Area"
+const DIRECTIONS=["north","south","east","west","central","northeast","northwest","southeast","southwest","upper","lower","greater","northern","southern","eastern","western","mid","midwest"];
+function metroOf(region){
+  let s=String(region||"").trim();
+  if(!s) return "";
+  let state="";
+  // pull a trailing state: " - WI", " - IL", " WI", " IL"
+  let m=s.match(/[\s\-]+([A-Za-z]{2})$/);
+  if(m){ state=m[1].toUpperCase(); s=s.slice(0,m.index).trim(); }
+  s=s.replace(/[\s\-]+$/,"").trim();
+  // strip a leading direction word
+  const parts=s.split(/\s+/);
+  if(parts.length>1 && DIRECTIONS.includes(parts[0].toLowerCase())){ parts.shift(); s=parts.join(" "); }
+  else if(parts.length===1 && DIRECTIONS.includes(parts[0].toLowerCase())){ s=""; }
+  s=s.trim();
+  if(!s) return state||"";   // e.g. "Central IL" -> "IL"
+  return s;
+}
 let expanded=new Set();
 let expandAll=false;
 let localUpdatedAt=Number(localStorage.getItem(KEY+":ts")||0);
@@ -398,6 +418,7 @@ function getFiltered(){
   return contacts.filter(c=>{
     if(statusFilter!=="All" && c.status!==statusFilter) return false;
     if(companyFilter!=="All" && c.company!==companyFilter) return false;
+    if(metroFilter!=="All" && metroOf(c.region)!==metroFilter) return false;
     if(regionFilter!=="All" && c.region!==regionFilter) return false;
     if(tierFilter!=="All" && (c.tier||"")!==tierFilter) return false;
     if(!q) return true;
@@ -422,9 +443,16 @@ function render(){
   cf.innerHTML='<option value="All">All companies</option>'+companies.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
   cf.value=companies.includes(prev)||prev==="All"?prev:"All"; companyFilter=cf.value;
 
+  // metro (major city) filter — derived, no reassignment needed
+  const mf=$("metroFilter"); const mprev=metroFilter;
+  const metros=[...new Set(contacts.map(c=>metroOf(c.region)).filter(Boolean))].sort();
+  mf.innerHTML='<option value="All">All metros</option>'+metros.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
+  mf.value=metros.includes(mprev)||mprev==="All"?mprev:"All"; metroFilter=mf.value;
+
+  // region filter — narrows to the chosen metro's sub-regions
   const rf=$("regionFilter"); const rprev=regionFilter;
-  const regions=[...new Set(contacts.map(c=>c.region).filter(Boolean))].sort();
-  rf.innerHTML='<option value="All">All regions</option>'+regions.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
+  const regions=[...new Set(contacts.filter(c=>metroFilter==="All"||metroOf(c.region)===metroFilter).map(c=>c.region).filter(Boolean))].sort();
+  rf.innerHTML='<option value="All">'+(metroFilter==="All"?"All regions":"All of "+metroFilter)+'</option>'+regions.map(c=>'<option>'+c.replace(/</g,"&lt;")+'</option>').join("");
   rf.value=regions.includes(rprev)||rprev==="All"?rprev:"All"; regionFilter=rf.value;
 
   const rows=$("rows"); rows.innerHTML="";
@@ -448,7 +476,7 @@ function render(){
   const groups=new Map();
   for(const c of list){ const key=c.company||NOCO; if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(c); }
   const names=[...groups.keys()].sort((a,b)=>{ if(a===NOCO)return 1; if(b===NOCO)return -1; return a.localeCompare(b); });
-  const searching = query.trim()!=="" || statusFilter!=="All" || regionFilter!=="All" || tierFilter!=="All" || companyFilter!=="All";
+  const searching = query.trim()!=="" || statusFilter!=="All" || regionFilter!=="All" || tierFilter!=="All" || companyFilter!=="All" || metroFilter!=="All";
 
   for(const name of names){
     const members=groups.get(name);
@@ -522,7 +550,7 @@ function render(){
 }
 function updateExportMeta(){
   const n=getScopeRows().length;
-  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title, City, Region, Tier";
+  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title, City, Metro, Region, Tier";
 }
 function cycleCompanyTier(company, current){
   const order=["Gold","Silver","Bronze",""];
@@ -590,8 +618,9 @@ function importCSV(file){
 
 // ---------- export ----------
 function doExport(kind){
-  const rows=getScopeRows();
-  if(!rows.length){ toast("No contacts in that selection to export."); return; }
+  const base=getScopeRows();
+  if(!base.length){ toast("No contacts in that selection to export."); return; }
+  const rows=base.map(c=>Object.assign({},c,{metro:metroOf(c.region)})); // derive Metro column
   if(kind==="csv") download("mail-merge-list.csv",new Blob([buildCSV(rows)],{type:"text/csv;charset=utf-8;"}));
   else download("mail-merge-list.xlsx",buildXLSX(rows));
   toast("Exported "+rows.length+" contact"+(rows.length===1?"":"s")+" as "+kind.toUpperCase()+".");
@@ -609,6 +638,7 @@ function restore(file){
 $("search").oninput=e=>{ query=e.target.value; render(); };
 $("statusFilter").onchange=e=>{ statusFilter=e.target.value; render(); };
 $("companyFilter").onchange=e=>{ companyFilter=e.target.value; render(); };
+$("metroFilter").onchange=e=>{ metroFilter=e.target.value; regionFilter="All"; render(); };
 $("regionFilter").onchange=e=>{ regionFilter=e.target.value; render(); };
 $("tierFilter").onchange=e=>{ tierFilter=e.target.value; render(); };
 $("expandToggle").onclick=()=>{ expandAll=!expandAll; if(!expandAll) expanded.clear(); $("expandToggle").textContent=expandAll?"Collapse all":"Expand all"; render(); };
