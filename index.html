@@ -476,11 +476,11 @@ function render(){
   const groups=new Map();
   for(const c of list){ const key=c.company||NOCO; if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(c); }
   const names=[...groups.keys()].sort((a,b)=>{ if(a===NOCO)return 1; if(b===NOCO)return -1; return a.localeCompare(b); });
-  const searching = query.trim()!=="" || statusFilter!=="All" || regionFilter!=="All" || tierFilter!=="All" || companyFilter!=="All" || metroFilter!=="All";
+  const autoReveal = query.trim()!==""; // only a typed search auto-opens groups; dropdown filters leave them collapsed
 
   for(const name of names){
     const members=groups.get(name);
-    const isOpen = expandAll || searching || expanded.has(name);
+    const isOpen = expandAll || autoReveal || expanded.has(name);
     const grp=el("div","group"+(isOpen?" open":""));
 
     // ---- header (what you see collapsed) ----
@@ -512,7 +512,7 @@ function render(){
     meta.appendChild(el("span","gcount",members.length+(members.length===1?" contact":" contacts")+" · "+activeN+" active"));
     head.appendChild(meta);
 
-    head.onclick=()=>{ if(searching||expandAll) return; if(expanded.has(name)) expanded.delete(name); else expanded.add(name); render(); };
+    head.onclick=()=>{ if(autoReveal||expandAll) return; if(expanded.has(name)) expanded.delete(name); else expanded.add(name); render(); };
     grp.appendChild(head);
 
     // ---- body (the people, revealed on click) ----
