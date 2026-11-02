@@ -78,7 +78,30 @@
   .icon-btn{background:none; padding:6px; border-radius:7px; color:#9aa1a9; display:inline-flex;}
   .icon-btn:hover{background:#eef0f2; color:var(--ink);}
   .icon-btn.del:hover{background:var(--bounced-bg); color:var(--bounced-fg);}
-  .empty{padding:48px 16px; text-align:center; color:var(--slate);}
+  /* tiers */
+  .tier{display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:99px; font-size:11px; font-weight:700; letter-spacing:.02em; cursor:pointer; border:none;}
+  .tier .tdot{width:7px; height:7px; border-radius:99px;}
+  .tier.Gold{background:#FBF1D9; color:#8A6A2F;} .tier.Gold .tdot{background:#C9A227;}
+  .tier.Silver{background:#EAEDF0; color:#566270;} .tier.Silver .tdot{background:#9AA3AE;}
+  .tier.Bronze{background:#F1E4D8; color:#8A5A33;} .tier.Bronze .tdot{background:#B2794B;}
+  .tier.none{background:#F3F2EE; color:#A39A83; font-weight:600;}
+  /* rolodex groups */
+  #rows{margin-top:16px;}
+  .group{border:1px solid var(--line); border-radius:12px; background:var(--card); margin-bottom:10px; overflow:hidden;}
+  .ghead{display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; user-select:none;}
+  .ghead:hover{background:#faf9f6;}
+  .chev{color:#b4a98f; transition:transform .18s; flex:none; display:inline-flex;}
+  .group.open .chev{transform:rotate(90deg);}
+  .gname{font-weight:700; font-size:15px; letter-spacing:-0.01em; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .gmeta{margin-left:auto; display:flex; align-items:center; gap:10px; flex:none;}
+  .gcount{font-size:12px; color:var(--muted); white-space:nowrap;}
+  .gregion{font-size:12px; color:var(--slate); white-space:nowrap;}
+  .gbody{border-top:1px solid var(--line-soft); display:none;}
+  .group.open .gbody{display:block;}
+  .contact{display:grid; grid-template-columns:2.4fr 2.4fr 1.3fr .7fr; gap:8px; align-items:center; padding:10px 16px 10px 40px; border-bottom:1px solid var(--line-soft);}
+  .contact:last-child{border-bottom:none;}
+  .contact:hover{background:#fbfaf7;}
+  .empty{padding:48px 16px; text-align:center; color:var(--slate); border:1px solid var(--line); border-radius:12px; background:var(--card);}
   .empty .row{display:flex; gap:8px; justify-content:center; margin-top:16px;}
   /* export bar */
   .export{margin-top:20px; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--card);}
@@ -94,13 +117,31 @@
   .backup a{color:var(--slate); cursor:pointer; text-decoration:underline;}
   .backup a:hover{color:var(--ink);}
   .note{display:flex; gap:6px; align-items:flex-start; font-size:12px; color:var(--slate); margin-top:14px;}
+  /* sync bar + login */
+  .syncbar{display:flex; align-items:center; gap:10px; margin-top:12px; font-size:12px; color:var(--slate);}
+  .syncchip{display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:99px; font-weight:600; background:#F1F0EC; color:#6B6455;}
+  .syncchip .sdot{width:7px; height:7px; border-radius:99px; background:#A39A83;}
+  .syncchip.ok{background:var(--active-bg); color:var(--active-fg);} .syncchip.ok .sdot{background:var(--active-dot);}
+  .syncchip.busy{background:#FBF1D9; color:#8A6A2F;} .syncchip.busy .sdot{background:#C9A227;}
+  .syncchip.off{background:#FBEBEA; color:#A3352C;} .syncchip.off .sdot{background:#C6473C;}
+  .syncbar a{color:var(--slate); text-decoration:underline; cursor:pointer;}
+  .overlay{position:fixed; inset:0; background:rgba(31,41,51,.45); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;}
+  .login{background:#fff; border-radius:16px; padding:24px; width:100%; max-width:360px; box-shadow:0 20px 60px #0004;}
+  .login h2{margin:0 0 4px; font-size:19px;}
+  .login p{margin:0 0 16px; font-size:13px; color:var(--slate);}
+  .login input{width:100%; margin-bottom:10px;}
+  .login .lrow{display:flex; gap:8px; margin-top:4px;}
+  .login .lrow .btn{flex:1; justify-content:center;}
+  .login .hint{font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;}
   /* toast */
   #toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:all .25s; box-shadow:0 8px 24px #0003;}
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   .hide-sm{}
   @media(max-width:640px){
-    .thead,.trow{grid-template-columns:2fr 1.6fr 1.2fr; }
+    .contact{grid-template-columns:2fr 1.2fr .7fr; padding-left:34px;}
     .col-email,.hide-sm{display:none;}
+    .gmeta{gap:6px;}
+    .gregion{display:none;}
     .grid{grid-template-columns:1fr 1fr;}
     h1{font-size:24px;}
   }
@@ -120,18 +161,26 @@
     </div>
   </header>
 
+  <div class="syncbar" id="syncbar" style="display:none">
+    <span class="syncchip" id="syncchip"><span class="sdot"></span><span id="syncchipText">Local</span></span>
+    <span id="syncWho"></span>
+    <a id="signoutBtn" style="display:none">Sign out</a>
+  </div>
+
   <div class="toolbar">
     <div class="search">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       <input id="search" placeholder="Search name, email, company…" />
     </div>
     <select id="statusFilter"><option value="All">All statuses</option><option>Active</option><option>Left</option><option>Bounced</option></select>
+    <select id="tierFilter"><option value="All">All tiers</option><option>Gold</option><option>Silver</option><option>Bronze</option></select>
     <select id="companyFilter"><option value="All">All companies</option></select>
     <select id="regionFilter"><option value="All">All regions</option></select>
     <input id="importRegion" placeholder="Tag region on import (optional)" style="max-width:220px" />
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <input type="file" id="importFile" accept=".csv,.txt" hidden />
     <button class="btn btn-dark" id="addBtn">+ Add contact</button>
+    <button class="btn btn-ghost" id="expandToggle">Expand all</button>
   </div>
 
   <div id="panel">
@@ -144,6 +193,7 @@
       <input id="f_title" placeholder="Job title" />
       <input id="f_city" placeholder="City" />
       <input id="f_region" placeholder="Region / territory" />
+      <select id="f_tier"><option value="">Tier (none)</option><option>Gold</option><option>Silver</option><option>Bronze</option></select>
       <select id="f_status"><option>Active</option><option>Left</option><option>Bounced</option></select>
     </div>
     <div class="panel-actions">
@@ -152,16 +202,7 @@
     </div>
   </div>
 
-  <div class="table">
-    <div class="thead">
-      <div>Name</div>
-      <div class="col-email">Email</div>
-      <div>Company</div>
-      <div>Status</div>
-      <div class="r">·</div>
-    </div>
-    <div id="rows"></div>
-  </div>
+  <div id="rows"></div>
 
   <div class="export">
     <div class="export-top">
@@ -195,22 +236,52 @@
 
 <div id="toast"></div>
 
+<div class="overlay" id="loginOverlay" style="display:none">
+  <div class="login">
+    <h2>Sign in</h2>
+    <p>Your contact list syncs to your own private database, so it shows up on every device. Sign in to load it here.</p>
+    <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" />
+    <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" />
+    <div class="lrow">
+      <button class="btn btn-dark" id="signinBtn">Sign in</button>
+      <button class="btn btn-ghost" id="signupBtn">Create account</button>
+    </div>
+    <div class="hint" id="loginHint">First time here? Type an email and password, then hit Create account.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
+/* ============ CLOUD SYNC SETUP ============
+   Leave these two blank and the app works exactly as before:
+   it saves only on this device, fully offline.
+   Paste your Supabase Project URL and anon public key to turn
+   on sync across all your devices. Setup steps are in the notes
+   I sent with this file. */
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+/* ========================================== */
 const KEY="mailmerge_contacts_v1";
 const STATUSES=["Active","Left","Bounced"];
-const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"],["city","City"],["region","Region"]];
+const EXPORT_COLS=[["firstName","First Name"],["lastName","Last Name"],["email","Email"],["company","Company"],["title","Job Title"],["city","City"],["region","Region"],["tier","Tier"]];
 const $=(id)=>document.getElementById(id);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 let contacts=[];
 let editingId=null;
 let scope="active";
-let query="", statusFilter="All", companyFilter="All", regionFilter="All";
+let query="", statusFilter="All", companyFilter="All", regionFilter="All", tierFilter="All";
+let expanded=new Set();
+let expandAll=false;
+let localUpdatedAt=Number(localStorage.getItem(KEY+":ts")||0);
+let cloud={on:false, client:null, user:null};
+let dirty=false, pushTimer=null, pollTimer=null;
 
 // ---------- persistence ----------
 function load(){ try{ const r=localStorage.getItem(KEY); contacts=r?JSON.parse(r):[]; }catch(e){ contacts=[]; } }
-function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(contacts)); }catch(e){} }
+function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(contacts)); localStorage.setItem(KEY+":ts", String(localUpdatedAt)); }catch(e){} }
+function persist(){ localUpdatedAt=Date.now(); saveLocal(); if(cloud.on) schedulePush(); }
 
 // ---------- helpers ----------
 function emailOk(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e||"").trim()); }
@@ -224,6 +295,7 @@ function mapHeader(h){
   if(["title","jobtitle","position","role"].includes(n)) return "title";
   if(["city","town"].includes(n)) return "city";
   if(["region","territory","area","zone","market","state"].includes(n)) return "region";
+  if(["tier","grade","level","segment"].includes(n)) return "tier";
   if(["status"].includes(n)) return "status";
   if(["notes","note","comment","comments"].includes(n)) return "notes";
   if(["name","fullname","contact"].includes(n)) return "fullName";
@@ -327,6 +399,7 @@ function getFiltered(){
     if(statusFilter!=="All" && c.status!==statusFilter) return false;
     if(companyFilter!=="All" && c.company!==companyFilter) return false;
     if(regionFilter!=="All" && c.region!==regionFilter) return false;
+    if(tierFilter!=="All" && (c.tier||"")!==tierFilter) return false;
     if(!q) return true;
     return [c.firstName,c.lastName,c.email,c.company,c.title].some(f=>String(f||"").toLowerCase().includes(q));
   });
@@ -356,6 +429,7 @@ function render(){
 
   const rows=$("rows"); rows.innerHTML="";
   const list=getFiltered();
+
   if(list.length===0){
     const e=el("div","empty");
     e.appendChild(el("div",null,contacts.length?"No contacts match your search or filters.":"Your list is empty."));
@@ -366,24 +440,61 @@ function render(){
       r.appendChild(b1); r.appendChild(b2); e.appendChild(r);
     }
     rows.appendChild(e);
-  } else {
-    for(const c of list){
-      const row=el("div","trow");
-      // name
+    updateExportMeta(); return;
+  }
+
+  // group contacts by company (the rolodex)
+  const NOCO="— No company —";
+  const groups=new Map();
+  for(const c of list){ const key=c.company||NOCO; if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(c); }
+  const names=[...groups.keys()].sort((a,b)=>{ if(a===NOCO)return 1; if(b===NOCO)return -1; return a.localeCompare(b); });
+  const searching = query.trim()!=="" || statusFilter!=="All" || regionFilter!=="All" || tierFilter!=="All" || companyFilter!=="All";
+
+  for(const name of names){
+    const members=groups.get(name);
+    const isOpen = expandAll || searching || expanded.has(name);
+    const grp=el("div","group"+(isOpen?" open":""));
+
+    // ---- header (what you see collapsed) ----
+    const head=el("div","ghead");
+    const chev=el("span","chev");
+    chev.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>';
+    head.appendChild(chev);
+    head.appendChild(el("div","gname",name));
+
+    const meta=el("div","gmeta");
+    const tierVal=(members.find(m=>m.tier)||{}).tier||"";
+    const tier=el("button","tier "+(tierVal||"none"));
+    if(tierVal){ tier.appendChild(el("span","tdot")); tier.appendChild(document.createTextNode(tierVal)); }
+    else { tier.textContent="+ tier"; }
+    tier.title="Set this customer's tier (applies to the whole company)";
+    if(name!==NOCO){ tier.onclick=(ev)=>{ ev.stopPropagation(); cycleCompanyTier(name, tierVal); }; }
+    else { tier.style.visibility="hidden"; }
+    meta.appendChild(tier);
+
+    const regs=[...new Set(members.map(m=>m.region).filter(Boolean))];
+    if(regs.length===1) meta.appendChild(el("span","gregion",regs[0]));
+    else if(regs.length>1) meta.appendChild(el("span","gregion","multiple regions"));
+
+    const activeN=members.filter(m=>m.status==="Active").length;
+    meta.appendChild(el("span","gcount",members.length+(members.length===1?" contact":" contacts")+" · "+activeN+" active"));
+    head.appendChild(meta);
+
+    head.onclick=()=>{ if(searching||expandAll) return; if(expanded.has(name)) expanded.delete(name); else expanded.add(name); render(); };
+    grp.appendChild(head);
+
+    // ---- body (the people, revealed on click) ----
+    const body=el("div","gbody");
+    for(const c of members){
+      const row=el("div","contact");
       const nameWrap=el("div");
-      nameWrap.appendChild(el("div","nm truncate",(c.firstName+" "+c.lastName).trim()));
-      if(c.title) nameWrap.appendChild(el("div","tt truncate",c.title));
-      const emailSm=el("div","tt truncate hide-sm-inv"); // small-screen email under name
+      nameWrap.appendChild(el("div","nm truncate",(c.firstName+" "+c.lastName).trim()||"(no name)"));
+      const sub=[c.title,c.city].filter(Boolean).join(" · ");
+      if(sub) nameWrap.appendChild(el("div","tt truncate",sub));
       row.appendChild(nameWrap);
-      // email
-      const em=el("div","cell-muted truncate col-email",c.email); row.appendChild(em);
-      // company + location
-      const compWrap=el("div");
-      compWrap.appendChild(el("div","cell-muted truncate",c.company));
-      const loc=[c.city,c.region].filter(Boolean).join(" · ");
-      if(loc) compWrap.appendChild(el("div","tt truncate",loc));
-      row.appendChild(compWrap);
-      // status
+
+      row.appendChild(el("div","cell-muted truncate col-email",c.email));
+
       const stWrap=el("div");
       const pill=el("button","pill "+c.status);
       pill.title="Click to change status";
@@ -391,7 +502,7 @@ function render(){
       pill.appendChild(document.createTextNode(c.status));
       pill.onclick=()=>cycleStatus(c.id);
       stWrap.appendChild(pill); row.appendChild(stWrap);
-      // actions
+
       const act=el("div","row-actions");
       const edit=el("button","icon-btn"); edit.title="Edit";
       edit.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
@@ -401,26 +512,40 @@ function render(){
       del.onclick=()=>{ contacts=contacts.filter(x=>x.id!==c.id); persist(); render(); };
       act.appendChild(edit); act.appendChild(del);
       row.appendChild(act);
-      rows.appendChild(row);
+
+      body.appendChild(row);
     }
+    grp.appendChild(body);
+    rows.appendChild(grp);
   }
+  updateExportMeta();
+}
+function updateExportMeta(){
   const n=getScopeRows().length;
-  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title, City, Region";
+  $("exportMeta").textContent=n+" contact"+(n===1?"":"s")+" selected · columns: First Name, Last Name, Email, Company, Job Title, City, Region, Tier";
+}
+function cycleCompanyTier(company, current){
+  const order=["Gold","Silver","Bronze",""];
+  const next=order[(order.indexOf(current)+1)%order.length];
+  contacts=contacts.map(c=>(c.company||"")===company?Object.assign({},c,{tier:next}):c);
+  persist(); render();
+  toast(next?(company+" set to "+next):(company+" tier cleared"));
 }
 
 // ---------- CRUD form ----------
-function openAdd(){ editingId=null; $("panelTitle").textContent="Add contact"; ["firstName","lastName","email","company","title","city","region"].forEach(k=>$("f_"+k).value=""); $("f_status").value="Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
-function openEdit(id){ const c=contacts.find(x=>x.id===id); if(!c)return; editingId=id; $("panelTitle").textContent="Edit contact"; ["firstName","lastName","email","company","title","city","region","status"].forEach(k=>$("f_"+k).value=c[k]||""); $("f_status").value=c.status||"Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
+function openAdd(){ editingId=null; $("panelTitle").textContent="Add contact"; ["firstName","lastName","email","company","title","city","region","tier"].forEach(k=>$("f_"+k).value=""); $("f_status").value="Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
+function openEdit(id){ const c=contacts.find(x=>x.id===id); if(!c)return; editingId=id; $("panelTitle").textContent="Edit contact"; ["firstName","lastName","email","company","title","city","region","tier","status"].forEach(k=>$("f_"+k).value=c[k]||""); $("f_status").value=c.status||"Active"; $("panel").classList.add("open"); $("f_firstName").focus(); }
 function closePanel(){ $("panel").classList.remove("open"); editingId=null; }
 function saveForm(){
   const d={
     firstName:$("f_firstName").value.trim(), lastName:$("f_lastName").value.trim(),
     email:$("f_email").value.trim(), company:$("f_company").value.trim(),
     title:$("f_title").value.trim(), city:$("f_city").value.trim(),
-    region:$("f_region").value.trim(), status:$("f_status").value,
+    region:$("f_region").value.trim(), tier:$("f_tier").value, status:$("f_status").value,
   };
   if(!d.firstName && !d.lastName && !d.email){ toast("Add at least a name or an email."); return; }
   if(d.email && !emailOk(d.email)){ toast("That email address looks off — check it."); return; }
+  if(!editingId && d.company && !d.tier){ const ex=contacts.find(c=>(c.company||"")===d.company && c.tier); if(ex) d.tier=ex.tier; }
   if(editingId){ contacts=contacts.map(c=>c.id===editingId?Object.assign({},c,d):c); }
   else { contacts.unshift(Object.assign({id:uid(),notes:""},d)); }
   persist(); closePanel(); render();
@@ -439,9 +564,10 @@ function importCSV(file){
       if(rows.length<2){ toast("That file needs a header row plus at least one contact."); return; }
       const headers=rows[0].map(mapHeader);
       const batchRegion=$("importRegion").value.trim();
+      const tierByCompany={}; contacts.forEach(c=>{ if(c.company && c.tier && !tierByCompany[c.company]) tierByCompany[c.company]=c.tier; });
       const imported=[];
       for(let i=1;i<rows.length;i++){
-        const r=rows[i]; const c={id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",status:"Active",notes:""};
+        const r=rows[i]; const c={id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",tier:"",status:"Active",notes:""};
         headers.forEach((h,ci)=>{
           const v=(r[ci]||"").trim();
           if(h==="fullName"){ const p=v.split(/\s+/); c.firstName=p.shift()||""; c.lastName=p.join(" "); }
@@ -449,6 +575,7 @@ function importCSV(file){
         });
         if(!STATUSES.includes(c.status)) c.status="Active";
         if(!c.region && batchRegion) c.region=batchRegion;
+        if(!c.tier && c.company && tierByCompany[c.company]) c.tier=tierByCompany[c.company];
         if(c.firstName||c.lastName||c.email) imported.push(c);
       }
       const seen=new Set(contacts.map(c=>c.email.toLowerCase()).filter(Boolean));
@@ -474,7 +601,7 @@ function doExport(kind){
 function backup(){ download("contacts-backup.json",new Blob([JSON.stringify(contacts,null,2)],{type:"application/json"})); toast("Backup saved."); }
 function restore(file){
   const reader=new FileReader();
-  reader.onload=e=>{ try{ const arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ contacts=arr.map(c=>Object.assign({id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",status:"Active",notes:""},c)); persist(); render(); toast("Restored "+arr.length+" contacts."); } else toast("That backup file didn't look right."); }catch(err){ toast("That backup file couldn't be read."); } };
+  reader.onload=e=>{ try{ const arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ contacts=arr.map(c=>Object.assign({id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",tier:"",status:"Active",notes:""},c)); persist(); render(); toast("Restored "+arr.length+" contacts."); } else toast("That backup file didn't look right."); }catch(err){ toast("That backup file couldn't be read."); } };
   reader.readAsText(file);
 }
 
@@ -483,6 +610,8 @@ $("search").oninput=e=>{ query=e.target.value; render(); };
 $("statusFilter").onchange=e=>{ statusFilter=e.target.value; render(); };
 $("companyFilter").onchange=e=>{ companyFilter=e.target.value; render(); };
 $("regionFilter").onchange=e=>{ regionFilter=e.target.value; render(); };
+$("tierFilter").onchange=e=>{ tierFilter=e.target.value; render(); };
+$("expandToggle").onclick=()=>{ expandAll=!expandAll; if(!expandAll) expanded.clear(); $("expandToggle").textContent=expandAll?"Collapse all":"Expand all"; render(); };
 $("addBtn").onclick=openAdd;
 $("cancelBtn").onclick=closePanel;
 $("saveBtn").onclick=saveForm;
@@ -496,7 +625,78 @@ $("backupBtn").onclick=backup;
 $("restoreBtn").onclick=()=>$("restoreFile").click();
 $("restoreFile").onchange=e=>{ if(e.target.files[0]) restore(e.target.files[0]); e.target.value=""; };
 
-load(); render();
+// ---------- cloud sync (Supabase) ----------
+function setSync(state, text){ const chip=$("syncchip"); if(!chip)return; chip.className="syncchip"+(state?(" "+state):""); $("syncchipText").textContent=text; }
+function updateAccountBar(){
+  if(!cloud.on){ $("syncbar").style.display="none"; return; }
+  $("syncbar").style.display="flex";
+  if(cloud.user){ $("syncWho").textContent="Signed in as "+(cloud.user.email||"you"); $("signoutBtn").style.display="inline"; }
+  else { $("syncWho").textContent=""; $("signoutBtn").style.display="none"; }
+}
+function showLogin(show){ $("loginOverlay").style.display=show?"flex":"none"; }
+function schedulePush(){ dirty=true; if(!cloud.on||!cloud.user) return; setSync("busy","Saving…"); clearTimeout(pushTimer); pushTimer=setTimeout(pushCloud,800); }
+async function pushCloud(){
+  if(!cloud.on||!cloud.user) return;
+  try{
+    const { error }=await cloud.client.from("lists").upsert({ owner:cloud.user.id, data:contacts, updated_at:new Date(localUpdatedAt).toISOString() });
+    if(error) throw error;
+    dirty=false; setSync("ok","Synced");
+  }catch(e){ setSync("off","Offline, will retry"); }
+}
+async function pullCloud(){
+  if(!cloud.on||!cloud.user) return;
+  try{
+    const { data, error }=await cloud.client.from("lists").select("data,updated_at").eq("owner",cloud.user.id).maybeSingle();
+    if(error) throw error;
+    if(data){
+      const remoteTs=Date.parse(data.updated_at)||0;
+      if(remoteTs>localUpdatedAt){
+        contacts=Array.isArray(data.data)?data.data.map(c=>Object.assign({id:uid(),firstName:"",lastName:"",email:"",company:"",title:"",city:"",region:"",tier:"",status:"Active",notes:""},c)):[];
+        localUpdatedAt=remoteTs; saveLocal(); render(); setSync("ok","Synced");
+      } else if(localUpdatedAt>remoteTs && dirty){ pushCloud(); }
+      else { setSync("ok","Synced"); }
+    } else { if(contacts.length) pushCloud(); else setSync("ok","Synced"); }
+  }catch(e){ setSync("off","Offline, using local copy"); }
+}
+function startPolling(){ clearInterval(pollTimer); pollTimer=setInterval(()=>{ if(document.visibilityState==="visible"&&cloud.user) pullCloud(); },25000); }
+async function initCloud(){
+  if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase){ cloud.on=false; updateAccountBar(); return; }
+  cloud.on=true;
+  cloud.client=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  updateAccountBar();
+  cloud.client.auth.onAuthStateChange((_ev,session)=>{
+    cloud.user=session?session.user:null; updateAccountBar();
+    if(cloud.user){ showLogin(false); setSync("busy","Syncing…"); pullCloud(); startPolling(); }
+    else { showLogin(true); setSync("","Local"); }
+  });
+  const { data }=await cloud.client.auth.getSession();
+  cloud.user=data&&data.session?data.session.user:null; updateAccountBar();
+  if(cloud.user){ showLogin(false); setSync("busy","Syncing…"); pullCloud(); startPolling(); }
+  else { showLogin(true); }
+}
+async function doSignIn(){
+  const email=$("loginEmail").value.trim(), pw=$("loginPassword").value;
+  if(!email||!pw){ $("loginHint").textContent="Enter your email and password."; return; }
+  $("loginHint").textContent="Signing in…";
+  const { error }=await cloud.client.auth.signInWithPassword({email,password:pw});
+  if(error) $("loginHint").textContent=error.message;
+}
+async function doSignUp(){
+  const email=$("loginEmail").value.trim(), pw=$("loginPassword").value;
+  if(!email||pw.length<6){ $("loginHint").textContent="Use a real email and a password of at least 6 characters."; return; }
+  $("loginHint").textContent="Creating your account…";
+  const { data, error }=await cloud.client.auth.signUp({email,password:pw});
+  if(error){ $("loginHint").textContent=error.message; return; }
+  if(!data.session) $("loginHint").textContent="Account made. Check your email to confirm, then sign in. (Or turn off email confirmation in Supabase to skip this.)";
+}
+$("signinBtn").onclick=doSignIn;
+$("signupBtn").onclick=doSignUp;
+$("signoutBtn").onclick=async()=>{ await cloud.client.auth.signOut(); };
+$("loginOverlay").addEventListener("keydown",e=>{ if(e.key==="Enter") doSignIn(); });
+window.addEventListener("online",()=>{ if(cloud.user){ pullCloud(); if(dirty) pushCloud(); } });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&cloud.user) pullCloud(); });
+
+load(); render(); initCloud();
 </script>
 </body>
 </html>
